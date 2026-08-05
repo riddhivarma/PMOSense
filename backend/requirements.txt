@@ -1,0 +1,15 @@
+Flask
+Flask-Cors
+Flask-JWT-Extended
+Flask-RESTful
+Flask-Mail
+pymongo
+bcrypt
+joblib
+scikit-learn
+xgboost
+pandas
+numpy
+reportlab
+python-dotenv
+gunicorn

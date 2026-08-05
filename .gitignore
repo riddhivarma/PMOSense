@@ -1,0 +1,22 @@
+# Node & Frontend dependencies
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+
+# Python & Backend dependencies
+backend/venv/
+backend/__pycache__/
+backend/*/__pycache__/
+backend/*.pyc
+backend/.env
+backend/uploads/*
+backend/reports/*
+!backend/uploads/.gitkeep
+!backend/reports/.gitkeep
+
+# IDE & OS cache
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
