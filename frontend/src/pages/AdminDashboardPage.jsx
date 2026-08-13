@@ -159,7 +159,7 @@ export default function AdminDashboardPage() {
           <Card title="Recent Administrative Actions" icon={<Clock size={16} />}>
             <div className="space-y-4 mt-2 text-xs">
               {[
-                { time: "10 mins ago", action: "System checked: XGBoost classification scaling operational." },
+                { time: "10 mins ago", action: "System checked: Random Forest classification scaling operational." },
                 { time: "1 hour ago", action: "Admin verification: Dr. Jenkins specialized account approved." },
                 { time: "Yesterday", action: "Article published: 'Strength Training vs Cardio for PMOS Recovery' posted by Wellness Team." }
               ].map((act, i) => (

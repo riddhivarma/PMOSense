@@ -7,7 +7,6 @@ pymongo
 bcrypt
 joblib
 scikit-learn
-xgboost
 pandas
 numpy
 reportlab

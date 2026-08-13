@@ -44,7 +44,7 @@ export default function AboutPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs sm:text-sm text-slate-650 leading-relaxed">
           <div>
             <span className="font-bold text-slate-800 block mb-1">1. High-Fidelity Screening</span>
-            Analyse indicators (hirsutism, menstrual regularity, skin darkening, acne, BMI) using Random Forest and XGBoost classifiers yielding 96%+ validation accuracies.
+            Analyse indicators (hirsutism, menstrual regularity, skin darkening, acne, BMI) using Random Forest classification yielding high-precision validation performance.
           </div>
           <div>
             <span className="font-bold text-slate-800 block mb-1">2. Customized Diet & Fitness Guides</span>
@@ -72,7 +72,7 @@ export default function AboutPage() {
           {[
             { cat: "Frontend Shell", items: "React.js, Vite, Axios, Tailwind CSS v4" },
             { cat: "Auth & States", items: "Context API, JWT Session, Password Salting" },
-            { cat: "Machine Learning", items: "XGBoost, Random Forest, Scikit-learn" },
+            { cat: "Machine Learning", items: "Random Forest, Scikit-learn, Pandas" },
             { cat: "Database Shell", items: "MongoDB Atlas, PyMongo Client" }
           ].map((stack, i) => (
             <div key={i} className="bg-white border border-slate-150 p-4 rounded-xl flex flex-col justify-between">

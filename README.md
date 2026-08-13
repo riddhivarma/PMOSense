@@ -1,6 +1,6 @@
 # PMOSense – AI-Powered Early PMOS Risk Assessment & Awareness Platform
 
-PMOSense is an AI-powered healthcare screening platform designed for early risk assessment and education regarding Polyendocrine Metabolic Ovarian Syndrome (PMOS). The platform utilizes Machine Learning algorithms (XGBoost/Random Forest) to evaluate physical symptoms, menstrual cycle patterns, and lifestyle habits, providing personalized guidelines and downloadable PDF screening reports.
+PMOSense is an AI-powered healthcare screening platform designed for early risk assessment and education regarding Polyendocrine Metabolic Ovarian Syndrome (PMOS). The platform utilizes Machine Learning algorithms (Random Forest) to evaluate physical symptoms, menstrual cycle patterns, and lifestyle habits, providing personalized guidelines and downloadable PDF screening reports.
 
 ---
 
@@ -78,10 +78,12 @@ PMOSense/
 │       │   ├── Footer.jsx       # Disclaimer & quick links
 │       │   ├── Card.jsx         # Sleek glassmorphism wrappers
 │       │   └── Skeleton.jsx     # Pulse loading skeleton cards
-│       └── pages/               # Views folders
-│           ├── public/          # Landing, About, Contact, Auth portals
-│           ├── user/            # Dashboards, Assessments, Recommendations
-│           └── doctor_admin/    # Specialist & Admin workspaces
+│       └── pages/               # Application view pages
+│           ├── LandingPage.jsx  # Landing & feature overview
+│           ├── RegisterPage.jsx / LoginPage.jsx # Authentication portals
+│           ├── UserDashboardPage.jsx / AssessmentPage.jsx # Patient workspace & screener
+│           ├── DoctorDashboardPage.jsx / DoctorConsultationPage.jsx # Doctor portal
+│           └── AdminDashboardPage.jsx # Administrative dashboard
 ├── reports/                     # Server temporary generated PDF cache folder
 └── uploads/                     # Server upload items
 ```
@@ -100,7 +102,7 @@ Ensure the following are installed:
 
 ### 1️⃣ Machine Learning Setup
 The classification models are developed using Jupyter Notebooks. The main training and validation processes can be run in:
-- `machine_learning/PMOS_Training.ipynb` (to preprocess the dataset, train, and save the serialized model as `models/pmos_model.pkl`)
+- `machine_learning/PMOS_Training.ipynb` (to preprocess the dataset, train, and save the serialized model as `models/pcos_model.pkl`)
 - `machine_learning/PMOS_Testing.ipynb` (to test and validate the model predictions)
 
 ---
@@ -152,10 +154,16 @@ cd ../frontend
 # Install dependencies
 npm install
 
+#### 📁 Frontend environment variables (.env - Optional)
+Create a `.env` file in the `frontend/` directory to configure custom backend API URLs:
+```env
+VITE_API_URL=http://localhost:5000/api
+```
+
 # Run in Development mode
 npm run dev
 ```
-*The React client will launch at `http://localhost:5173`.*
+*The React client will launch at `http://localhost:5173` (or custom port).*
 
 ---
 

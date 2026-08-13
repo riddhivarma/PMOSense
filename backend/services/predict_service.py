@@ -35,7 +35,7 @@ class PredictService:
     @classmethod
     def evaluate_risk(cls, data):
         """
-        Runs XGBoost classification on clinical symptoms features dictionary.
+        Runs Random Forest classification on clinical symptoms features dictionary.
         Returns:
             prediction_result: 'High', 'Moderate', or 'Low'
             confidence_score: percentage value (0 to 100)

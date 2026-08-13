@@ -121,7 +121,7 @@ class AssessmentController:
             # Update User vitals automatically
             users_col.update_one(
                 {"user_id": user_id},
-                {"$set": {"age": age, "height": height, "weight": weight, "bmi": bmi}}
+                {"$set": {"age": age, "height": height, "weight": weight, "bmi": bmi, "blood_group": blood_group}}
             )
 
             # Generate Recommendations

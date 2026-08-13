@@ -1,6 +1,8 @@
 // frontend/src/context/AuthContext.jsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
+const API_BASE = import.meta.env.VITE_API_URL || `${API_BASE}`;
+
 const AuthContext = createContext(null);
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -143,21 +145,21 @@ export function AuthProvider({ children }) {
           const headers = { 'Authorization': `Bearer ${token}` };
           
           // Fetch users
-          const usersRes = await fetch('http://localhost:5000/api/admin/users', { headers });
+          const usersRes = await fetch(`${API_BASE}/admin/users`, { headers });
           if (usersRes.ok) {
             const usersData = await usersRes.json();
             setUsers(usersData.map(u => ({ ...u, id: u.user_id })));
           }
           
           // Fetch doctors
-          const docsRes = await fetch('http://localhost:5000/api/admin/doctors', { headers });
+          const docsRes = await fetch(`${API_BASE}/admin/doctors`, { headers });
           if (docsRes.ok) {
             const docsData = await docsRes.json();
             setDoctors(docsData.map(d => ({ ...d, id: d.doctor_id })));
           }
           
           // Fetch articles
-          const artRes = await fetch('http://localhost:5000/api/admin/articles', { headers });
+          const artRes = await fetch(`${API_BASE}/admin/articles`, { headers });
           if (artRes.ok) {
             const artData = await artRes.json();
             setArticles(artData.map(a => ({ ...a, id: a.article_id })));
@@ -167,7 +169,7 @@ export function AuthProvider({ children }) {
         }
       } else {
         try {
-          const publicDocsRes = await fetch('http://localhost:5000/api/doctors');
+          const publicDocsRes = await fetch(`${API_BASE}/doctors`);
           if (publicDocsRes.ok) {
             const docsData = await publicDocsRes.json();
             setDoctors(docsData.map(d => ({ ...d, id: d.doctor_id })));
@@ -176,7 +178,7 @@ export function AuthProvider({ children }) {
           // Fetch user's assessment history if logged in as patient
           if (user && user.role === 'user') {
             const token = localStorage.getItem('pmosense_token');
-            const historyRes = await fetch('http://localhost:5000/api/assessment/history', {
+            const historyRes = await fetch(`${API_BASE}/assessment/history`, {
               headers: { 'Authorization': `Bearer ${token}` }
             });
             if (historyRes.ok) {
@@ -193,7 +195,7 @@ export function AuthProvider({ children }) {
             }
 
             // Fetch user's consultations
-            const consultsRes = await fetch('http://localhost:5000/api/consultation/user', {
+            const consultsRes = await fetch(`${API_BASE}/consultation/user`, {
               headers: { 'Authorization': `Bearer ${token}` }
             });
             if (consultsRes.ok) {
@@ -207,7 +209,7 @@ export function AuthProvider({ children }) {
             }
           } else if (user && user.role === 'doctor') {
             const token = localStorage.getItem('pmosense_token');
-            const consultsRes = await fetch('http://localhost:5000/api/consultation/doctor', {
+            const consultsRes = await fetch(`${API_BASE}/consultation/doctor`, {
               headers: { 'Authorization': `Bearer ${token}` }
             });
             if (consultsRes.ok) {
@@ -234,13 +236,13 @@ export function AuthProvider({ children }) {
     let payload = {};
 
     if (role === 'admin' || email === 'admin@pmosense.com') {
-      endpoint = 'http://localhost:5000/api/admin/login';
+      endpoint = `${API_BASE}/admin/login`;
       payload = { username: email, password };
     } else if (role === 'doctor' || email === 'doctor@pmosense.com') {
-      endpoint = 'http://localhost:5000/api/doctor/login';
+      endpoint = `${API_BASE}/doctor/login`;
       payload = { email, password };
     } else {
-      endpoint = 'http://localhost:5000/api/user/login';
+      endpoint = `${API_BASE}/user/login`;
       payload = { email, password };
     }
 
@@ -257,7 +259,7 @@ export function AuthProvider({ children }) {
 
     localStorage.setItem('pmosense_token', data.token);
 
-    const profileRes = await fetch('http://localhost:5000/api/profile', {
+    const profileRes = await fetch(`${API_BASE}/profile`, {
       headers: { 'Authorization': `Bearer ${data.token}` }
     });
 
@@ -273,7 +275,7 @@ export function AuthProvider({ children }) {
   };
 
   const register = async (name, email, password, role, extraFields = {}) => {
-    let endpoint = role === 'doctor' ? 'http://localhost:5000/api/doctor/register' : 'http://localhost:5000/api/user/register';
+    let endpoint = role === 'doctor' ? `${API_BASE}/doctor/register` : `${API_BASE}/user/register`;
 
     const payload = {
       name, email, password, ...extraFields
@@ -353,7 +355,7 @@ export function AuthProvider({ children }) {
       // admin updates (assuming admin modifies these)
     }
 
-    const res = await fetch('http://localhost:5000/api/profile', {
+    const res = await fetch(`${API_BASE}/profile`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -368,7 +370,7 @@ export function AuthProvider({ children }) {
     }
 
     // Refresh user state
-    const profileRes = await fetch('http://localhost:5000/api/profile', {
+    const profileRes = await fetch(`${API_BASE}/profile`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
 
@@ -408,7 +410,7 @@ export function AuthProvider({ children }) {
       regular_exercise: inputs.reg_exercise
     };
 
-    const res = await fetch('http://localhost:5000/api/assessment', {
+    const res = await fetch(`${API_BASE}/assessment`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -420,7 +422,7 @@ export function AuthProvider({ children }) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Failed to save assessment.");
 
-    const asmRes = await fetch(`http://localhost:5000/api/assessment/${data.assessment_id}`, {
+    const asmRes = await fetch(`${API_BASE}/assessment/${data.assessment_id}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     
@@ -455,7 +457,7 @@ export function AuthProvider({ children }) {
     if (!user) return;
     const token = localStorage.getItem('pmosense_token');
     try {
-      const res = await fetch(`http://localhost:5000/api/assessment/${id}`, {
+      const res = await fetch(`${API_BASE}/assessment/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -472,7 +474,7 @@ export function AuthProvider({ children }) {
     const token = localStorage.getItem('pmosense_token');
     
     try {
-      const res = await fetch('http://localhost:5000/api/consultation', {
+      const res = await fetch(`${API_BASE}/consultation`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -488,7 +490,7 @@ export function AuthProvider({ children }) {
       if (!res.ok) throw new Error(data.message || "Failed to submit consultation.");
       
       // Re-fetch to get updated list
-      const consultsRes = await fetch('http://localhost:5000/api/consultation/user', {
+      const consultsRes = await fetch(`${API_BASE}/consultation/user`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (consultsRes.ok) {
@@ -512,7 +514,7 @@ export function AuthProvider({ children }) {
     const token = localStorage.getItem('pmosense_token');
     
     try {
-      const res = await fetch('http://localhost:5000/api/consultation/reply', {
+      const res = await fetch(`${API_BASE}/consultation/reply`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -528,7 +530,7 @@ export function AuthProvider({ children }) {
       if (!res.ok) throw new Error(data.message || "Failed to reply to consultation.");
       
       // Re-fetch to get updated list
-      const consultsRes = await fetch('http://localhost:5000/api/consultation/doctor', {
+      const consultsRes = await fetch(`${API_BASE}/consultation/doctor`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (consultsRes.ok) {
@@ -584,7 +586,7 @@ export function AuthProvider({ children }) {
     if (!user || user.role !== 'admin') return;
     try {
       const token = localStorage.getItem('pmosense_token');
-      const res = await fetch(`http://localhost:5000/api/admin/users/${id}/verify`, {
+      const res = await fetch(`${API_BASE}/admin/users/${id}/verify`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -598,7 +600,7 @@ export function AuthProvider({ children }) {
     if (!user || user.role !== 'admin') return;
     try {
       const token = localStorage.getItem('pmosense_token');
-      const res = await fetch(`http://localhost:5000/api/admin/doctors/${id}/approve`, {
+      const res = await fetch(`${API_BASE}/admin/doctors/${id}/approve`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -615,7 +617,7 @@ export function AuthProvider({ children }) {
     if (!user || user.role !== 'admin') return;
     try {
       const token = localStorage.getItem('pmosense_token');
-      const res = await fetch(`http://localhost:5000/api/admin/doctors/${id}/profile_change/verify`, {
+      const res = await fetch(`${API_BASE}/admin/doctors/${id}/profile_change/verify`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -640,7 +642,7 @@ export function AuthProvider({ children }) {
     if (!user || user.role !== 'admin') return;
     try {
       const token = localStorage.getItem('pmosense_token');
-      const res = await fetch(`http://localhost:5000/api/admin/doctors/${id}/profile_change/reject`, {
+      const res = await fetch(`${API_BASE}/admin/doctors/${id}/profile_change/reject`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${token}` }
       });
