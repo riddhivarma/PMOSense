@@ -19,9 +19,22 @@ class ConsultationController:
     def create_consultation():
         """POST /api/consultation"""
         try:
+            import os
+            from config import Config
+            from werkzeug.utils import secure_filename
+
             user_id = get_jwt_identity()
-            data = request.get_json() or {}
+            
+            # Handle both JSON and FormData
+            if request.is_json:
+                data = request.get_json() or {}
+            else:
+                data = request.form
+
             doctor_id = data.get('doctor_id')
+            if doctor_id == "null" or not doctor_id:
+                doctor_id = None
+                
             question = data.get('question', '').strip()
 
             if not question:
@@ -36,12 +49,39 @@ class ConsultationController:
                 if not doc:
                     return jsonify({"message": "Selected doctor is invalid or not verified."}), 400
 
+            file_paths = []
+            files = request.files.getlist('files') or request.files.getlist('files[]')
+            if files:
+                if len(files) > 2:
+                    return jsonify({"message": "Maximum 2 PDF files allowed."}), 422
+                for file in files:
+                    if file.filename:
+                        if not file.filename.lower().endswith('.pdf'):
+                            return jsonify({"message": "Only PDF files are allowed."}), 422
+                            
+                        file.seek(0, os.SEEK_END)
+                        file_length = file.tell()
+                        if file_length > 1024 * 1024:
+                            return jsonify({"message": "Each PDF file size must be less than 1MB."}), 422
+                        file.seek(0)
+                        
+                        upload_dir = os.path.join(Config.UPLOAD_FOLDER, 'consultations')
+                        os.makedirs(upload_dir, exist_ok=True)
+                        
+                        ext = file.filename.rsplit('.', 1)[1].lower()
+                        unique_filename = f"{uuid.uuid4().hex}.{ext}"
+                        save_path = os.path.join(upload_dir, unique_filename)
+                        file.save(save_path)
+                        
+                        file_paths.append(f"consultations/{unique_filename}")
+
             consultation_id = str(uuid.uuid4())
             new_consult = {
                 "consultation_id": consultation_id,
                 "user_id": user_id,
-                "doctor_id": doctor_id, # Can be null for general pool
+                "doctor_id": doctor_id,
                 "question": question,
+                "file_paths": file_paths,
                 "reply": "",
                 "status": "pending",
                 "consultation_date": datetime.datetime.utcnow().isoformat()
@@ -130,3 +170,52 @@ class ConsultationController:
 
         except Exception as e:
             return jsonify({"message": "Error replying to query.", "error": str(e)}), 500
+
+    @staticmethod
+    def download_consultation_file(consultation_id):
+        """GET /api/consultation/:id/file"""
+        try:
+            from flask import send_file
+            import os
+            from config import Config
+            
+            # Fetch consultation
+            consultation = consultations_col.find_one({"consultation_id": consultation_id})
+            if not consultation:
+                return jsonify({"message": "Consultation record not found."}), 404
+                
+            # Verify authorization
+            user_id = get_jwt_identity()
+            user = users_col.find_one({"user_id": user_id}) or doctors_col.find_one({"doctor_id": user_id})
+            if not user:
+                return jsonify({"message": "User not found."}), 404
+                
+            if 'doctor_id' in user:
+                if consultation.get("doctor_id") and consultation.get("doctor_id") != user["doctor_id"] and consultation.get("status") != "pending":
+                    return jsonify({"message": "Unauthorized access."}), 403
+            else:
+                if consultation.get("user_id") != user["user_id"]:
+                    return jsonify({"message": "Unauthorized access."}), 403
+            
+            file_paths = consultation.get("file_paths", [])
+            if not file_paths and consultation.get("file_path"):
+                file_paths = [consultation.get("file_path")]
+                
+            if not file_paths:
+                return jsonify({"message": "No file attached to this consultation."}), 404
+                
+            index = request.args.get('index', 0, type=int)
+            if index < 0 or index >= len(file_paths):
+                return jsonify({"message": "File not found."}), 404
+                
+            file_path = file_paths[index]
+                
+            full_path = os.path.join(Config.UPLOAD_FOLDER, file_path)
+            if not os.path.exists(full_path):
+                return jsonify({"message": "File not found on server."}), 404
+                
+            ext = file_path.rsplit('.', 1)[-1]
+            return send_file(full_path, as_attachment=True, download_name=f"Consultation_Document_{consultation_id}_{index+1}.{ext}")
+            
+        except Exception as e:
+            return jsonify({"message": "Error downloading file.", "error": str(e)}), 500

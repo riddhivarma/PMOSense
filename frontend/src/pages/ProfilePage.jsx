@@ -361,7 +361,7 @@ export default function ProfilePage() {
             <div className="glass-card p-6 sm:p-8 space-y-6 shadow-md">
               <h3 className="text-sm font-bold text-slate-800 flex items-center space-x-2 border-b border-slate-100 pb-2">
                 <ClipboardCheck className="text-brand-indigo-500" size={16} />
-                <span>Your Profile Details</span>
+                <span>My Profile Details</span>
               </h3>
 
               {user?.role === 'user' ? (

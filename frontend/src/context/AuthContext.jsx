@@ -20,62 +20,7 @@ const calculateAge = (dobString) => {
 };
 
 // Mock Initial Educational Articles matching all categories
-const initialArticles = [
-  {
-    id: "art-1",
-    title: "What is PMOS? Understanding the Endocrine Disorder",
-    category: "What is PMOS",
-    content: "Polyendocrine Metabolic Ovarian Syndrome (PMOS) is a multi-system hormonal disorder characterized by reproductive, metabolic, and psychological features. It affects 8% to 13% of women of reproductive age. Diagnostic criteria (Rotterdam consensus) require at least two of the following: 1) Irregular or absent ovulatory cycles, 2) Elevated androgen hormone levels (hyperandrogenism), and 3) Polycystic ovaries visible on pelvic ultrasound.",
-    video_url: "https://www.youtube.com/watch?v=N4d94A3D0B4",
-    created_by: "Dr. Sarah Jenkins",
-    created_at: "Jul 15, 2026"
-  },
-  {
-    id: "art-2",
-    title: "Common Symptoms: From Menstrual Irregularity to Hirsutism",
-    category: "Symptoms",
-    content: "PMOS manifests differently in every individual. Key clinical symptoms include oligomenorrhea (cycles > 35 days), amenorrhea, persistent facial and abdominal hair growth (hirsutism), androgenic hair thinning, acanthosis nigricans (dark velvety skin patches around neck folds), cystic acne, and metabolic insulin resistance leading to weight management challenges.",
-    video_url: "https://www.youtube.com/watch?v=V3W94S3D0C6",
-    created_by: "Dr. Elena Rostova",
-    created_at: "Jul 18, 2026"
-  },
-  {
-    id: "art-3",
-    title: "Root Causes: Insulin Resistance and Hyperandrogenism",
-    category: "Causes",
-    content: "While the exact etiology remains complex, insulin resistance plays a primary role. Excess insulin signals the ovaries to produce excess testosterone, impairing egg follicle maturation. Genetic predisposition, low-grade systemic inflammation, and environmental endocrine disruptors also contribute significantly to the onset of symptoms.",
-    video_url: "",
-    created_by: "EndoResearch Team",
-    created_at: "Jul 19, 2026"
-  },
-  {
-    id: "art-4",
-    title: "Prevention & Lifestyle Strategies",
-    category: "Prevention",
-    content: "Early lifestyle intervention can mitigate long-term complications such as Type 2 diabetes, dyslipidemia, and cardiovascular risks. Key strategies include maintaining a stable low-glycemic index diet, regular physical exercise to increase muscle GLUT-4 glucose transporters, stress management, and consistent sleep hygiene.",
-    video_url: "",
-    created_by: "Dr. Amanda Ross",
-    created_at: "Jul 20, 2026"
-  },
-  {
-    id: "art-5",
-    title: "PMOS Healthy Diet Guide: Glycemic Control and Nutrition",
-    category: "Healthy Diet",
-    content: "Dietary management is essential for regulating insulin sensitivity. Focus on complex carbohydrates (quinoa, legumes, steel-cut oats), high-fiber dark leafy greens, lean proteins, and omega-3 fatty acids (salmon, walnuts, flaxseeds). Minimize refined sugars, white flour, processed foods, and sugary drinks.",
-    video_url: "",
-    created_by: "NutriWellness Team",
-    created_at: "Jul 21, 2026"
-  },
-  {
-    id: "art-6",
-    title: "Frequently Asked Questions (FAQs) About PMOS",
-    category: "FAQs",
-    content: "Q: Can PMOS be cured?\nA: PMOS is a chronic condition, but symptoms can be effectively managed and reversed through targeted diet, exercise, and clinical guidance.\n\nQ: Is PMOSense a diagnostic tool?\nA: No, PMOSense provides early risk screening only. A formal diagnosis requires clinical evaluation by a physician.",
-    video_url: "",
-    created_by: "Medical Review Board",
-    created_at: "Jul 22, 2026"
-  }
-];
+const initialArticles = [];
 
 // Mock Approved Doctors
 const initialDoctors = [
@@ -108,7 +53,15 @@ export function AuthProvider({ children }) {
 
   const [articles, setArticles] = useState(() => {
     const saved = localStorage.getItem('pmosense_articles_db');
-    return saved ? JSON.parse(saved) : initialArticles;
+    if (!saved) return initialArticles;
+    try {
+      const parsed = JSON.parse(saved);
+      const existingIds = new Set(parsed.map(p => p.id));
+      const missing = initialArticles.filter(a => !existingIds.has(a.id));
+      return missing.length > 0 ? [...parsed, ...missing] : parsed;
+    } catch {
+      return initialArticles;
+    }
   });
 
   const [assessments, setAssessments] = useState(() => {
@@ -116,7 +69,68 @@ export function AuthProvider({ children }) {
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [reports, setReports] = useState(() => {
+    const saved = localStorage.getItem('pmosense_reports_db');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const [consultations, setConsultations] = useState([]);
+
+  const formatCycleRecord = (c) => {
+    let end_date = c.end_date;
+    if ((!end_date || end_date === 'Ongoing') && c.start_date) {
+      try {
+        const d = new Date(c.start_date);
+        const dur = parseInt(c.period_duration) || 5;
+        d.setDate(d.getDate() + (dur - 1));
+        end_date = d.toISOString().split('T')[0];
+      } catch {
+        end_date = c.start_date;
+      }
+    }
+    return {
+      ...c,
+      end_date,
+      period_duration: c.period_duration || 5
+    };
+  };
+
+  const [cycles, setCycles] = useState(() => {
+    const saved = localStorage.getItem('pmosense_cycles_db');
+    if (!saved) return [];
+    try {
+      return JSON.parse(saved).map(c => {
+        let end_date = c.end_date;
+        if ((!end_date || end_date === 'Ongoing') && c.start_date) {
+          const d = new Date(c.start_date);
+          const dur = parseInt(c.period_duration) || 5;
+          d.setDate(d.getDate() + (dur - 1));
+          end_date = d.toISOString().split('T')[0];
+        }
+        return { ...c, end_date, period_duration: c.period_duration || 5 };
+      });
+    } catch {
+      return [];
+    }
+  });
+
+  const [cycleStats, setCycleStats] = useState(() => {
+    const saved = localStorage.getItem('pmosense_cycle_stats');
+    return saved ? JSON.parse(saved) : {
+      avg_cycle_length: null,
+      cycle_regularity: "No records logged yet",
+      next_predicted_period: null,
+      total_logged: 0
+    };
+  });
+
+  useEffect(() => {
+    localStorage.setItem('pmosense_cycles_db', JSON.stringify(cycles));
+  }, [cycles]);
+
+  useEffect(() => {
+    localStorage.setItem('pmosense_cycle_stats', JSON.stringify(cycleStats));
+  }, [cycleStats]);
 
   useEffect(() => {
     localStorage.setItem('pmosense_users_db', JSON.stringify(users));
@@ -134,6 +148,10 @@ export function AuthProvider({ children }) {
     localStorage.setItem('pmosense_assessments_db', JSON.stringify(assessments));
   }, [assessments]);
 
+  useEffect(() => {
+    localStorage.setItem('pmosense_reports_db', JSON.stringify(reports));
+  }, [reports]);
+
 
 
   // Sync with backend
@@ -143,26 +161,32 @@ export function AuthProvider({ children }) {
         try {
           const token = localStorage.getItem('pmosense_token');
           const headers = { 'Authorization': `Bearer ${token}` };
-          
+
           // Fetch users
           const usersRes = await fetch(`${API_BASE}/admin/users`, { headers });
           if (usersRes.ok) {
             const usersData = await usersRes.json();
             setUsers(usersData.map(u => ({ ...u, id: u.user_id })));
           }
-          
+
           // Fetch doctors
           const docsRes = await fetch(`${API_BASE}/admin/doctors`, { headers });
           if (docsRes.ok) {
             const docsData = await docsRes.json();
             setDoctors(docsData.map(d => ({ ...d, id: d.doctor_id })));
           }
-          
+
           // Fetch articles
           const artRes = await fetch(`${API_BASE}/admin/articles`, { headers });
           if (artRes.ok) {
             const artData = await artRes.json();
             setArticles(artData.map(a => ({ ...a, id: a.article_id })));
+          }
+          // Fetch reports
+          const reportsRes = await fetch(`${API_BASE}/reports/all`, { headers });
+          if (reportsRes.ok) {
+            const reportsData = await reportsRes.json();
+            setReports(reportsData);
           }
         } catch (e) {
           console.error("Error syncing admin data from backend:", e);
@@ -174,7 +198,15 @@ export function AuthProvider({ children }) {
             const docsData = await publicDocsRes.json();
             setDoctors(docsData.map(d => ({ ...d, id: d.doctor_id })));
           }
-          
+
+          // Fetch public articles for all regular users and doctors
+          let loadedArticles = [];
+          const publicArtRes = await fetch(`${API_BASE}/articles`);
+          if (publicArtRes.ok) {
+            const artData = await publicArtRes.json();
+            loadedArticles = artData.map(a => ({ ...a, id: a.article_id }));
+          }
+
           // Fetch user's assessment history if logged in as patient
           if (user && user.role === 'user') {
             const token = localStorage.getItem('pmosense_token');
@@ -207,8 +239,22 @@ export function AuthProvider({ children }) {
                 resolved_at: c.resolved_at ? new Date(c.resolved_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : null
               })));
             }
+
+            // Fetch user's menstrual cycles
+            const cyclesRes = await fetch(`${API_BASE}/cycle`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (cyclesRes.ok) {
+              const cycleData = await cyclesRes.json();
+              if (cycleData.cycles) setCycles(cycleData.cycles);
+              if (cycleData.stats) setCycleStats(cycleData.stats);
+            }
+
+            setArticles(loadedArticles);
           } else if (user && user.role === 'doctor') {
             const token = localStorage.getItem('pmosense_token');
+
+            // Fetch doctor consultations
             const consultsRes = await fetch(`${API_BASE}/consultation/doctor`, {
               headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -221,13 +267,38 @@ export function AuthProvider({ children }) {
                 resolved_at: c.resolved_at ? new Date(c.resolved_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : null
               })));
             }
+
+            // Fetch doctor's own articles and merge with public articles
+            const docArtRes = await fetch(`${API_BASE}/doctor/articles`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (docArtRes.ok) {
+              const docArtData = await docArtRes.json();
+              const docArticles = docArtData.map(a => ({ ...a, id: a.article_id }));
+
+              // Merge, favoring doctor's own articles if duplicate ID
+              const docArticleIds = new Set(docArticles.map(a => a.id));
+              const filteredPublic = loadedArticles.filter(a => !docArticleIds.has(a.id));
+              loadedArticles = [...docArticles, ...filteredPublic];
+            }
+            setArticles(loadedArticles);
+
+            // Fetch reports
+            const reportsRes = await fetch(`${API_BASE}/reports/my`, { headers });
+            if (reportsRes.ok) {
+              const reportsData = await reportsRes.json();
+              setReports(reportsData);
+            }
+          } else {
+            // Not logged in
+            setArticles(loadedArticles);
           }
         } catch (e) {
           console.error("Error syncing public data from backend:", e);
         }
       }
     };
-    
+
     fetchData();
   }, [user]);
 
@@ -425,7 +496,7 @@ export function AuthProvider({ children }) {
     const asmRes = await fetch(`${API_BASE}/assessment/${data.assessment_id}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
-    
+
     if (asmRes.ok) {
       const newAssessment = await asmRes.json();
       if (newAssessment.date) {
@@ -435,7 +506,7 @@ export function AuthProvider({ children }) {
         }
       }
       setAssessments(prev => [newAssessment, ...prev]);
-      
+
       const updatedUser = {
         ...user,
         age: parseInt(inputs.age),
@@ -446,10 +517,10 @@ export function AuthProvider({ children }) {
       };
       setUser(updatedUser);
       localStorage.setItem('pmosense_user', JSON.stringify(updatedUser));
-      
+
       return newAssessment;
     }
-    
+
     throw new Error("Failed to retrieve saved assessment.");
   };
 
@@ -469,26 +540,32 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const addConsultation = async (question, doctorId) => {
+  const addConsultation = async (question, doctorId, files) => {
     if (!user) return null;
     const token = localStorage.getItem('pmosense_token');
-    
+
     try {
+      const formData = new FormData();
+      formData.append('question', question);
+      if (doctorId) formData.append('doctor_id', doctorId);
+      
+      if (files && files.length > 0) {
+        Array.from(files).forEach(file => {
+          formData.append('files[]', file);
+        });
+      }
+
       const res = await fetch(`${API_BASE}/consultation`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({
-          doctor_id: doctorId || null,
-          question
-        })
+        body: formData
       });
-      
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed to submit consultation.");
-      
+
       // Re-fetch to get updated list
       const consultsRes = await fetch(`${API_BASE}/consultation/user`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -512,7 +589,7 @@ export function AuthProvider({ children }) {
   const replyConsultation = async (id, reply) => {
     if (!user || user.role !== 'doctor') return;
     const token = localStorage.getItem('pmosense_token');
-    
+
     try {
       const res = await fetch(`${API_BASE}/consultation/reply`, {
         method: 'PUT',
@@ -525,10 +602,10 @@ export function AuthProvider({ children }) {
           reply
         })
       });
-      
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed to reply to consultation.");
-      
+
       // Re-fetch to get updated list
       const consultsRes = await fetch(`${API_BASE}/consultation/doctor`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -548,38 +625,165 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const addArticle = (title, category, content, video_url) => {
-    if (!user || user.role !== 'admin') return;
+  const fetchCycles = async () => {
+    if (!user) return;
+    const token = localStorage.getItem('pmosense_token');
+    if (!token) return;
+    try {
+      const res = await fetch(`${API_BASE}/cycle`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.cycles) setCycles(data.cycles.map(formatCycleRecord));
+        if (data.stats) setCycleStats(data.stats);
+      }
+    } catch (e) {
+      console.error("Error fetching cycle history:", e);
+    }
+  };
 
-    const newArt = {
-      id: "art-" + generateId(),
-      title,
-      category,
-      content,
-      video_url,
-      created_by: user.name,
-      created_at: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+  const addCycle = async (cycleData) => {
+    if (!user) return;
+    const token = localStorage.getItem('pmosense_token');
+    try {
+      const res = await fetch(`${API_BASE}/cycle`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(cycleData)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to save cycle details.");
+      await fetchCycles();
+      return data;
+    } catch (e) {
+      const localEntry = {
+        cycle_id: 'cyc-' + generateId(),
+        user_id: user.id,
+        ...cycleData,
+        created_at: new Date().toISOString()
+      };
+      setCycles(prev => [localEntry, ...prev.filter(c => c.start_date !== cycleData.start_date)]);
+      throw e;
+    }
+  };
+
+  const deleteCycle = async (id) => {
+    if (!user) return;
+    const token = localStorage.getItem('pmosense_token');
+    try {
+      const res = await fetch(`${API_BASE}/cycle/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        await fetchCycles();
+      } else {
+        setCycles(prev => prev.filter(c => c.cycle_id !== id));
+      }
+    } catch (e) {
+      setCycles(prev => prev.filter(c => c.cycle_id !== id));
+    }
+  };
+
+  const addArticle = async (title, category, content, video_url) => {
+    if (!user) return;
+    const token = localStorage.getItem('pmosense_token');
+    const isDoctor = user.role === 'doctor';
+    const endpoint = isDoctor ? `${API_BASE}/doctor/articles` : `${API_BASE}/admin/articles`;
+
+    // For admin, we map content to description in the payload
+    const payload = isDoctor ? {
+      title, content, category, video_url
+    } : {
+      title, description: content, category, video_url
     };
 
-    setArticles(prev => [newArt, ...prev]);
-    return newArt;
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to submit article.");
+
+      const newArt = { ...data.article, id: data.article.article_id };
+      setArticles(prev => [newArt, ...prev]);
+      return newArt;
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
   };
 
-  const updateArticle = (id, title, category, content, video_url) => {
+  const updateArticle = async (id, title, category, content, video_url) => {
     if (!user || user.role !== 'admin') return;
-
-    setArticles(prev => prev.map(art => art.id === id ? {
-      ...art,
-      title,
-      category,
-      content,
-      video_url
-    } : art));
+    const token = localStorage.getItem('pmosense_token');
+    try {
+      const res = await fetch(`${API_BASE}/admin/articles/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ title, category, description: content, video_url })
+      });
+      if (res.ok) {
+        setArticles(prev => prev.map(art => art.id === id ? { ...art, title, category, content, video_url } : art));
+      }
+    } catch (e) { console.error(e); }
   };
 
-  const deleteArticle = (id) => {
+  const deleteArticle = async (id) => {
     if (!user || user.role !== 'admin') return;
-    setArticles(prev => prev.filter(art => art.id !== id));
+    const token = localStorage.getItem('pmosense_token');
+    try {
+      const res = await fetch(`${API_BASE}/admin/articles/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setArticles(prev => prev.filter(art => art.id !== id));
+      }
+    } catch (e) { console.error(e); }
+  };
+
+  const approveArticle = async (id) => {
+    if (!user || user.role !== 'admin') return;
+    const token = localStorage.getItem('pmosense_token');
+    try {
+      const res = await fetch(`${API_BASE}/admin/articles/${id}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ status: 'PUBLISHED' })
+      });
+      if (res.ok) {
+        setArticles(prev => prev.map(art => art.id === id ? { ...art, status: 'PUBLISHED' } : art));
+      }
+    } catch (e) { console.error(e); }
+  };
+
+  const rejectArticle = async (id) => {
+    if (!user || user.role !== 'admin') return;
+    const token = localStorage.getItem('pmosense_token');
+    try {
+      const res = await fetch(`${API_BASE}/admin/articles/${id}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ status: 'REJECTED' })
+      });
+      if (res.ok) {
+        setArticles(prev => prev.map(art => art.id === id ? { ...art, status: 'REJECTED' } : art));
+      }
+    } catch (e) { console.error(e); }
   };
 
   const toggleUserVerify = async (id) => {
@@ -661,6 +865,55 @@ export function AuthProvider({ children }) {
     } catch (e) { console.error(e); }
   };
 
+  const addReport = async (title, description, file, doctorId, doctorName) => {
+    try {
+      const token = localStorage.getItem('pmosense_token');
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('description', description);
+      if (file) {
+        formData.append('file', file);
+      }
+      
+      const res = await fetch(`${API_BASE}/reports`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+      });
+      
+      const data = await res.json();
+      if (res.ok) {
+        setReports(prev => [data.report, ...prev]);
+        return data.report;
+      } else {
+        throw new Error(data.message || "Failed to submit report");
+      }
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
+  };
+
+  const resolveReport = async (id) => {
+    try {
+      const token = localStorage.getItem('pmosense_token');
+      const res = await fetch(`${API_BASE}/reports/${id}/resolve`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (res.ok) {
+        setReports(prev => prev.map(r => r.id === id ? { ...r, status: 'RESOLVED' } : r));
+      } else {
+        const data = await res.json();
+        throw new Error(data.message || "Failed to resolve report");
+      }
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -669,21 +922,31 @@ export function AuthProvider({ children }) {
       articles,
       assessments,
       consultations,
+      cycles,
+      cycleStats,
       login,
       register,
       logout,
       updateProfile,
       addAssessment,
       deleteAssessment,
+      addCycle,
+      deleteCycle,
+      fetchCycles,
       addConsultation,
       replyConsultation,
       addArticle,
       updateArticle,
       deleteArticle,
+      approveArticle,
+      rejectArticle,
       toggleUserVerify,
       approveDoctor,
       verifyProfileChange,
-      rejectProfileChange
+      rejectProfileChange,
+      reports,
+      addReport,
+      resolveReport
     }}>
       {children}
     </AuthContext.Provider>

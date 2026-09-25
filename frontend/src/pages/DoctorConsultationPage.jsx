@@ -5,13 +5,14 @@ import { useAuth } from '../context/AuthContext';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import Dropdown from '../components/Dropdown';
-import { Stethoscope, Send, HelpCircle, MessageSquare, Clock, CheckCircle, ChevronDown } from 'lucide-react';
+import { Stethoscope, Send, HelpCircle, MessageSquare, Clock, CheckCircle, ChevronDown, Paperclip, Download } from 'lucide-react';
 
 export default function DoctorConsultationPage() {
   const { user, doctors, consultations, addConsultation, replyConsultation } = useAuth();
   
   const [question, setQuestion] = useState('');
   const [selectedDoctor, setSelectedDoctor] = useState('');
+  const [pdfFiles, setPdfFiles] = useState([]);
   const [replyText, setReplyText] = useState('');
   const [activeQuery, setActiveQuery] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -33,7 +34,7 @@ export default function DoctorConsultationPage() {
 
     setLoading(true);
     try {
-      await addConsultation(question, selectedDoctor);
+      await addConsultation(question, selectedDoctor, pdfFiles);
       Swal.fire({
         icon: 'success',
         title: 'Query Sent!',
@@ -42,6 +43,7 @@ export default function DoctorConsultationPage() {
       });
       setQuestion('');
       setSelectedDoctor('');
+      setPdfFiles([]);
     } catch (err) {
       Swal.fire({ icon: 'error', title: 'Submission Error', text: err.message, confirmButtonColor: '#db2777' });
     } finally {
@@ -152,6 +154,54 @@ export default function DoctorConsultationPage() {
             />
           </div>
 
+          <div className="space-y-1.5 mt-4">
+            <label className="form-label">Attach PDF Documents <span className="text-slate-400 font-normal">(Optional, Max 2 files, 1MB each)</span></label>
+            <div className="relative">
+              <input
+                type="file"
+                multiple
+                accept="application/pdf"
+                className="form-input text-xs sm:text-sm pt-2 pb-2 pl-9 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-pink-50 file:text-brand-pink-700 hover:file:bg-brand-pink-100"
+                onChange={(e) => {
+                  const newFiles = Array.from(e.target.files);
+                  const totalFiles = [...pdfFiles, ...newFiles];
+                  
+                  if (totalFiles.length > 2) {
+                    Swal.fire({ icon: 'error', title: 'Too many files', text: 'You can upload a maximum of 2 PDFs.', confirmButtonColor: '#db2777' });
+                    e.target.value = null;
+                    return;
+                  }
+                  
+                  const validFiles = totalFiles.filter(f => f.size <= 1024 * 1024);
+                  if (validFiles.length !== totalFiles.length) {
+                    Swal.fire({ icon: 'error', title: 'File too large', text: 'Each PDF must be under 1MB.', confirmButtonColor: '#db2777' });
+                    e.target.value = null;
+                  } else {
+                    setPdfFiles(validFiles);
+                  }
+                  e.target.value = null; // Clear input so same file can be selected again if needed
+                }}
+              />
+              <Paperclip className="absolute left-3 top-[10px] text-slate-400" size={14} />
+            </div>
+            {pdfFiles.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {pdfFiles.map((file, idx) => (
+                  <span key={idx} className="inline-flex items-center space-x-1 px-2.5 py-1 bg-brand-pink-50 text-brand-pink-700 text-[10px] font-bold rounded-lg border border-brand-pink-200">
+                    <span className="truncate max-w-[120px]">{file.name}</span>
+                    <button 
+                      type="button" 
+                      onClick={() => setPdfFiles(pdfFiles.filter((_, i) => i !== idx))}
+                      className="ml-1 text-brand-pink-500 hover:text-rose-500"
+                    >
+                      &times;
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
           <Button 
             type="submit" 
             loading={loading} 
@@ -197,6 +247,22 @@ export default function DoctorConsultationPage() {
                 <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl">
                   <span className="block text-[8px] font-bold text-slate-400 uppercase mb-1">My Inquiry ({c.created_at}):</span>
                   <p className="text-xs sm:text-sm text-slate-650 leading-relaxed whitespace-pre-wrap">{c.question}</p>
+                  {(c.file_paths && c.file_paths.length > 0) || c.file_path ? (
+                    <div className="mt-3 border-t border-slate-200 pt-3 flex flex-wrap gap-2">
+                      {(c.file_paths?.length ? c.file_paths : [c.file_path]).map((path, idx) => (
+                        <a 
+                          key={idx}
+                          href={`${import.meta.env.VITE_API_URL || 'http://localhost:5005/api'}/consultation/${c.id}/file?index=${idx}&token=${localStorage.getItem('pmosense_token')}`}
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center space-x-1.5 text-[11px] font-bold text-brand-pink-650 hover:text-brand-pink-700 bg-brand-pink-50 hover:bg-brand-pink-100 px-3 py-1.5 rounded-md transition-colors"
+                        >
+                          <Download size={13} />
+                          <span>Download PDF {c.file_paths?.length > 1 ? idx + 1 : ''}</span>
+                        </a>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
 
                 {c.status === 'resolved' ? (
@@ -266,6 +332,22 @@ export default function DoctorConsultationPage() {
 
             <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-xs sm:text-sm text-slate-650 leading-relaxed whitespace-pre-wrap">
               {activeQuery.question}
+              {(activeQuery.file_paths && activeQuery.file_paths.length > 0) || activeQuery.file_path ? (
+                <div className="mt-3 border-t border-slate-200 pt-3 flex flex-wrap gap-2">
+                  {(activeQuery.file_paths?.length ? activeQuery.file_paths : [activeQuery.file_path]).map((path, idx) => (
+                    <a 
+                      key={idx}
+                      href={`${import.meta.env.VITE_API_URL || 'http://localhost:5005/api'}/consultation/${activeQuery.id}/file?index=${idx}&token=${localStorage.getItem('pmosense_token')}`}
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center space-x-1.5 text-[11px] font-bold text-brand-pink-650 hover:text-brand-pink-700 bg-brand-pink-50 hover:bg-brand-pink-100 px-3 py-1.5 rounded-md transition-colors"
+                    >
+                      <Download size={13} />
+                      <span>Download PDF {activeQuery.file_paths?.length > 1 ? idx + 1 : ''}</span>
+                    </a>
+                  ))}
+                </div>
+              ) : null}
             </div>
 
             <div className="space-y-1.5">

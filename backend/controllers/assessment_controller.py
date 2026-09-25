@@ -235,3 +235,50 @@ class AssessmentController:
             return jsonify({"message": "Assessment record successfully removed."}), 200
         except Exception as e:
             return jsonify({"message": "Error deleting assessment.", "error": str(e)}), 500
+
+    @staticmethod
+    def generate_assessment_pdf(id):
+        """GET /api/assessment/:id/pdf"""
+        try:
+            from flask import send_file
+            import io
+            from utils.report_generator import generate_pdf_report
+            import datetime
+            
+            user_id = get_jwt_identity()
+            # Fetch user info
+            user = users_col.find_one({"user_id": user_id})
+            if not user:
+                return jsonify({"message": "User not found."}), 404
+                
+            user_name = user.get("name", "Patient")
+            user_email = user.get("email", "patient@example.com")
+            
+            # Fetch assessment
+            assessment = assessments_col.find_one({"assessment_id": id, "user_id": user_id})
+            if not assessment:
+                return jsonify({"message": "Assessment record not found."}), 404
+            
+            rec = recommendations_col.find_one({"assessment_id": id})
+            
+            formatted_assessment = AssessmentController._format_assessment(assessment, rec)
+            
+            # Since date is a string in formatted_assessment, let's parse it to datetime for the report generator
+            try:
+                formatted_assessment['date'] = datetime.datetime.fromisoformat(formatted_assessment['date'].replace('Z', '+00:00'))
+            except Exception:
+                formatted_assessment['date'] = datetime.datetime.utcnow()
+            
+            # Generate PDF in memory
+            pdf_buffer = io.BytesIO()
+            generate_pdf_report(user_name, user_email, formatted_assessment, pdf_buffer)
+            pdf_buffer.seek(0)
+            
+            return send_file(
+                pdf_buffer,
+                as_attachment=True,
+                download_name=f"PMOSense_Report_{id}.pdf",
+                mimetype='application/pdf'
+            )
+        except Exception as e:
+            return jsonify({"message": "Error generating PDF report.", "error": str(e)}), 500

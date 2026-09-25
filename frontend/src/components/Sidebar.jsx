@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { 
   Activity, Scale, ShieldAlert, Award, FileText, User, Stethoscope, 
   BookOpen, LogOut, LayoutDashboard, History, MessageSquare, ShieldCheck, ClipboardCheck,
-  ChevronLeft, ChevronRight
+  ChevronLeft, ChevronRight, CalendarDays, AlertOctagon
 } from 'lucide-react';
 
 export default function Sidebar({ isCollapsed, onToggle }) {
@@ -31,6 +31,10 @@ export default function Sidebar({ isCollapsed, onToggle }) {
             <NavLink to="/dashboard" className={({ isActive }) => isActive ? activeClass : inactiveClass} title="My Dashboard">
               <LayoutDashboard size={18} />
               {!isCollapsed && <span>My Dashboard</span>}
+            </NavLink>
+            <NavLink to="/cycle-tracker" className={({ isActive }) => isActive ? activeClass : inactiveClass} title="Track My Cycles">
+              <CalendarDays size={18} />
+              {!isCollapsed && <span>Track My Cycles</span>}
             </NavLink>
             <NavLink to="/assessment" className={({ isActive }) => isActive ? activeClass : inactiveClass} title="PMOS Assessment">
               <ClipboardCheck size={18} />
@@ -65,6 +69,10 @@ export default function Sidebar({ isCollapsed, onToggle }) {
               <LayoutDashboard size={18} />
               {!isCollapsed && <span>My Dashboard</span>}
             </NavLink>
+            <NavLink to="/doctor-reports" className={({ isActive }) => isActive ? activeClass : inactiveClass} title="Support & Incident Reports">
+              <AlertOctagon size={18} />
+              {!isCollapsed && <span>Support & Incident Reports</span>}
+            </NavLink>
             <NavLink to="/education" className={({ isActive }) => isActive ? activeClass : inactiveClass} title="Educational Hub">
               <BookOpen size={18} />
               {!isCollapsed && <span>Educational Hub</span>}
@@ -82,7 +90,11 @@ export default function Sidebar({ isCollapsed, onToggle }) {
               <LayoutDashboard size={18} />
               {!isCollapsed && <span>My Dashboard</span>}
             </NavLink>
-            <NavLink to="/education" className={({ isActive }) => isActive ? activeClass : inactiveClass} title="Educational Hub">
+            <NavLink to="/admin-reports" className={({ isActive }) => isActive ? activeClass : inactiveClass} title="Incident Reports">
+              <AlertOctagon size={18} />
+              {!isCollapsed && <span>Incident Reports</span>}
+            </NavLink>
+            <NavLink to="/admin-education" className={({ isActive }) => isActive ? activeClass : inactiveClass} title="Educational Hub">
               <BookOpen size={18} />
               {!isCollapsed && <span>Educational Hub</span>}
             </NavLink>

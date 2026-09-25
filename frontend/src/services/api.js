@@ -76,4 +76,11 @@ export const educationAPI = {
   deleteArticle: (id) => api.delete(`/admin/articles/${id}`),
 };
 
+export const cycleAPI = {
+  logCycle: (cycleData) => api.post('/cycle', cycleData),
+  getCycles: () => api.get('/cycle'),
+  deleteCycle: (id) => api.delete(`/cycle/${id}`),
+};
+
 export default api;
+

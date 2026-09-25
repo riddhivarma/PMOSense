@@ -6,7 +6,9 @@ import Card from '../components/Card';
 import DashboardCard from '../components/DashboardCard';
 import Button from '../components/Button';
 import Table from '../components/Table';
-import { Stethoscope, Clock, CheckCircle, Send, MessageSquare, Award, ArrowRight } from 'lucide-react';
+import { 
+  Stethoscope, Clock, CheckCircle, Send, MessageSquare, Award, Download
+} from 'lucide-react';
 
 export default function DoctorDashboardPage() {
   const { user, consultations, replyConsultation } = useAuth();
@@ -146,6 +148,22 @@ export default function DoctorDashboardPage() {
 
                 <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl max-h-32 overflow-y-auto text-xs leading-relaxed text-slate-650 font-medium">
                   {activeQuery.question}
+                  {(activeQuery.file_paths && activeQuery.file_paths.length > 0) || activeQuery.file_path ? (
+                    <div className="mt-3 border-t border-slate-200 pt-3 flex flex-wrap gap-2">
+                      {(activeQuery.file_paths?.length ? activeQuery.file_paths : [activeQuery.file_path]).map((path, idx) => (
+                        <a 
+                          key={idx}
+                          href={`${import.meta.env.VITE_API_URL || 'http://localhost:5005/api'}/consultation/${activeQuery.id}/file?index=${idx}&token=${localStorage.getItem('pmosense_token')}`}
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center space-x-1.5 text-[11px] font-bold text-brand-pink-650 hover:text-brand-pink-700 bg-brand-pink-50 hover:bg-brand-pink-100 px-3 py-1.5 rounded-md transition-colors"
+                        >
+                          <Download size={13} />
+                          <span>Download PDF {activeQuery.file_paths?.length > 1 ? idx + 1 : ''}</span>
+                        </a>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="space-y-1.5">

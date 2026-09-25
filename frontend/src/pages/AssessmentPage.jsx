@@ -10,7 +10,7 @@ import { Activity, ShieldAlert, RotateCcw, ClipboardCheck, Scale, Droplet } from
 
 export default function AssessmentPage() {
   const navigate = useNavigate();
-  const { user, addAssessment } = useAuth();
+  const { user, addAssessment, cycleStats } = useAuth();
 
   // Form State
   const [age, setAge] = useState(user?.age || '');
@@ -19,6 +19,15 @@ export default function AssessmentPage() {
   const [bloodGroup, setBloodGroup] = useState(user?.blood_group || 'Not set');
   const [cycle, setCycle] = useState('0'); // 0 = Regular, 1 = Irregular
   const [cycleLength, setCycleLength] = useState('28');
+
+  // Auto-fill cycle metrics if tracked in Cycle Tracker
+  useEffect(() => {
+    if (cycleStats && cycleStats.avg_cycle_length) {
+      setCycleLength(String(Math.round(cycleStats.avg_cycle_length)));
+      const isIrreg = cycleStats.cycle_regularity?.includes('Irregular') ? '1' : '0';
+      setCycle(isIrreg);
+    }
+  }, [cycleStats]);
   
   // Symptoms states (Yes = true, No = false)
   const [weightGain, setWeightGain] = useState(false);
@@ -216,6 +225,20 @@ export default function AssessmentPage() {
             <Activity size={16} className="text-brand-indigo-500" />
             <span>2. Menstrual Pattern & Symptoms</span>
           </h3>
+
+          {cycleStats?.avg_cycle_length && (
+            <div className="p-3.5 rounded-xl bg-pink-50/80 border border-brand-pink-200/80 flex items-center justify-between text-xs animate-fadeIn">
+              <div className="flex items-center space-x-2">
+                <span className="px-2 py-0.5 rounded-md bg-brand-pink-500 text-white font-bold text-[10px] uppercase tracking-wider">
+                  Auto-Calibrated
+                </span>
+                <span className="text-slate-700 font-medium">
+                  Cycle inputs pre-filled from your <strong>Cycle Tracker</strong>: <strong>{Math.round(cycleStats.avg_cycle_length)} days</strong> ({cycleStats.cycle_regularity}).
+                </span>
+              </div>
+              <span className="text-[11px] text-brand-pink-600 font-bold hidden sm:inline">From Cycle Logs</span>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <Dropdown

@@ -1,5 +1,6 @@
 # backend/config.py
 import os
+from datetime import timedelta
 from dotenv import load_dotenv
 
 # Load environmental variables from .env
@@ -8,6 +9,9 @@ load_dotenv()
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'pcosense_secret_flask_key')
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', os.environ.get('SECRET_KEY', 'pcosense_secret_jwt_key'))
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(days=7)
+    JWT_TOKEN_LOCATION = ['headers', 'query_string']
+    JWT_QUERY_STRING_NAME = 'token'
     
     # MongoDB Atlas Connection
     MONGO_URI = os.environ.get('MONGO_URI', 'mongodb://localhost:27017/pcosense')

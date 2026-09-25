@@ -118,7 +118,7 @@ class AdminController:
     def get_articles():
         """GET /api/admin/articles"""
         try:
-            articles = list(edu_content_col.find({}, {"_id": 0}))
+            articles = list(edu_content_col.find({}, {"_id": 0}).sort("_id", -1))
             return jsonify(articles), 200
         except Exception as e:
             return jsonify({"message": "Error loading articles list.", "error": str(e)}), 500
@@ -135,17 +135,23 @@ class AdminController:
             if not title or not description or not category:
                 return jsonify({"message": "Title, description, and category are required."}), 422
 
-            article_id = str(uuid.uuid4())
+            article_id = f"art-{uuid.uuid4().hex[:8]}"
             new_art = {
                 "article_id": article_id,
                 "title": title,
-                "description": description,
+                "content": description,
                 "category": category,
-                "created_at": datetime.datetime.utcnow().isoformat()
+                "created_by": "Admin",
+                "authorId": "admin",
+                "authorRole": "admin",
+                "status": "PUBLISHED",
+                "video_url": data.get('video_url', ''),
+                "created_at": datetime.datetime.utcnow().strftime("%b %d, %Y")
             }
             edu_content_col.insert_one(new_art)
 
-            return jsonify({"message": "Article published successfully.", "article_id": article_id}), 201
+            new_art.pop("_id", None)
+            return jsonify({"message": "Article published successfully.", "article": new_art}), 201
         except Exception as e:
             return jsonify({"message": "Error creating article.", "error": str(e)}), 500
 
@@ -164,17 +170,37 @@ class AdminController:
 
             update_fields = {}
             if title: update_fields["title"] = title
-            if description: update_fields["description"] = description
+            if description: update_fields["content"] = description
             if category: update_fields["category"] = category
+            if 'video_url' in data: update_fields["video_url"] = data.get('video_url', '').strip()
 
             if not update_fields:
                 return jsonify({"message": "No valid fields provided for update."}), 400
 
             edu_content_col.update_one({"article_id": id}, {"$set": update_fields})
             return jsonify({"message": "Article updated successfully."}), 200
-            
         except Exception as e:
             return jsonify({"message": "Error updating article.", "error": str(e)}), 500
+            
+    @staticmethod
+    def update_article_status(id):
+        """PUT /api/admin/articles/:id/status"""
+        try:
+            data = request.get_json() or {}
+            new_status = data.get('status', '').upper()
+            
+            if new_status not in ['PUBLISHED', 'REJECTED']:
+                return jsonify({"message": "Invalid status."}), 400
+
+            art = edu_content_col.find_one({"article_id": id})
+            if not art:
+                return jsonify({"message": "Article not found."}), 404
+
+            edu_content_col.update_one({"article_id": id}, {"$set": {"status": new_status}})
+            return jsonify({"message": f"Article {new_status.lower()} successfully."}), 200
+            
+        except Exception as e:
+            return jsonify({"message": "Error updating article status.", "error": str(e)}), 500
 
     @staticmethod
     def delete_article(id):

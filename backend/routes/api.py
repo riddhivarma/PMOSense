@@ -8,6 +8,8 @@ from controllers.recommendation_controller import RecommendationController
 from controllers.consultation_controller import ConsultationController
 from controllers.education_controller import EducationController
 from controllers.admin_controller import AdminController
+from controllers.cycle_controller import CycleController
+from controllers.report_controller import ReportController
 
 api_bp = Blueprint('api', __name__)
 
@@ -71,6 +73,12 @@ def get_single_assessment(id):
 def delete_single_assessment(id):
     return AssessmentController.delete_assessment(id)
 
+@api_bp.route('/api/assessment/<id>/pdf', methods=['GET'])
+@jwt_required()
+@role_required(['user'])
+def download_assessment_pdf(id):
+    return AssessmentController.generate_assessment_pdf(id)
+
 @api_bp.route('/api/predict', methods=['POST'])
 @jwt_required()
 @role_required(['user'])
@@ -96,6 +104,12 @@ def get_recommendation_details(assessment_id):
 def create_consultation_query():
     return ConsultationController.create_consultation()
 
+@api_bp.route('/api/consultation/<id>/file', methods=['GET'])
+@jwt_required()
+@role_required(['user', 'doctor'])
+def download_consult_file(id):
+    return ConsultationController.download_consultation_file(id)
+
 @api_bp.route('/api/consultation/user', methods=['GET'])
 @jwt_required()
 @role_required(['user'])
@@ -119,6 +133,37 @@ def get_public_doctors():
     return ConsultationController.get_approved_doctors()
 
 # ==========================================
+# REPORTS (SUPPORT & INCIDENTS)
+# ==========================================
+@api_bp.route('/api/reports', methods=['POST'])
+@jwt_required()
+@role_required(['doctor'])
+def create_report():
+    return ReportController.create_report()
+
+@api_bp.route('/api/reports/my', methods=['GET'])
+@jwt_required()
+@role_required(['doctor'])
+def get_my_reports():
+    return ReportController.get_my_reports()
+
+@api_bp.route('/api/reports/all', methods=['GET'])
+@jwt_required()
+@role_required(['admin'])
+def get_all_reports():
+    return ReportController.get_all_reports()
+
+@api_bp.route('/api/reports/<report_id>/resolve', methods=['PUT'])
+@jwt_required()
+@role_required(['admin'])
+def resolve_report(report_id):
+    return ReportController.resolve_report(report_id)
+
+@api_bp.route('/api/reports/image/<filename>', methods=['GET'])
+def get_report_image(filename):
+    return ReportController.serve_report_image(filename)
+
+# ==========================================
 # EDUCATIONAL CONTENT ARTICLES
 # ==========================================
 @api_bp.route('/api/articles', methods=['GET'])
@@ -128,6 +173,18 @@ def get_educational_articles():
 @api_bp.route('/api/article/<id>', methods=['GET'])
 def get_single_article(id):
     return EducationController.get_article(id)
+
+@api_bp.route('/api/doctor/articles', methods=['GET'])
+@jwt_required()
+@role_required(['doctor'])
+def get_doctor_articles():
+    return EducationController.get_doctor_articles()
+
+@api_bp.route('/api/doctor/articles', methods=['POST'])
+@jwt_required()
+@role_required(['doctor'])
+def create_doctor_article():
+    return EducationController.create_doctor_article()
 
 # ==========================================
 # ADMIN DASHBOARD & CONTROLS
@@ -192,8 +249,42 @@ def create_admin_article():
 def update_admin_article(id):
     return AdminController.update_article(id)
 
+@api_bp.route('/api/admin/articles/<id>/status', methods=['PUT'])
+@jwt_required()
+@role_required(['admin'])
+def update_admin_article_status(id):
+    return AdminController.update_article_status(id)
+
 @api_bp.route('/api/admin/articles/<id>', methods=['DELETE'])
 @jwt_required()
 @role_required(['admin'])
 def delete_admin_article(id):
     return AdminController.delete_article(id)
+
+# ==========================================
+# MENSTRUAL CYCLE TRACKING
+# ==========================================
+@api_bp.route('/api/cycle', methods=['POST'])
+@jwt_required()
+@role_required(['user'])
+def log_user_cycle():
+    return CycleController.log_cycle()
+
+@api_bp.route('/api/cycle', methods=['GET'])
+@jwt_required()
+@role_required(['user'])
+def get_user_cycles():
+    return CycleController.get_user_cycles()
+
+@api_bp.route('/api/cycle/<id>', methods=['DELETE'])
+@jwt_required()
+@role_required(['user'])
+def delete_user_cycle(id):
+    return CycleController.delete_cycle(id)
+
+@api_bp.route('/api/cycle/pdf', methods=['GET'])
+@jwt_required()
+@role_required(['user'])
+def download_cycle_pdf():
+    return CycleController.generate_cycle_pdf()
+

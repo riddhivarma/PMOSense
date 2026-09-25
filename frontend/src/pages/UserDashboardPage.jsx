@@ -22,11 +22,18 @@ export default function UserDashboardPage() {
   const hasHistory = userAssessments.length > 0;
 
   // Compile trend coordinates for charts
-  const compiledTrends = [...userAssessments].reverse().map(asm => ({
-    date: asm.date.split(',')[0],
-    probability: Math.round(asm.prediction.probability * 100),
-    bmi: asm.inputs.bmi
-  }));
+  const dateCounts = {};
+  const compiledTrends = [...userAssessments].reverse().map(asm => {
+    let baseDate = asm.date.split(',')[0];
+    dateCounts[baseDate] = (dateCounts[baseDate] || 0) + 1;
+    let uniqueDate = baseDate + (dateCounts[baseDate] > 1 ? ` (${dateCounts[baseDate]})` : '');
+    
+    return {
+      date: uniqueDate,
+      probability: Math.round(asm.prediction.probability * 100),
+      bmi: asm.inputs.bmi
+    };
+  });
 
   const getRiskColor = (level) => {
     if (level === 'High') return 'red';
@@ -140,7 +147,7 @@ export default function UserDashboardPage() {
                   <XAxis dataKey="date" stroke="#94a3b8" fontSize={10} />
                   <YAxis domain={[0, 100]} stroke="#94a3b8" fontSize={10} />
                   <Tooltip />
-                  <Area type="monotone" dataKey="probability" name="Risk %" stroke="#db2777" strokeWidth={2} fillOpacity={1} fill="url(#riskGlow)" />
+                  <Area type="linear" dataKey="probability" name="Risk %" stroke="#db2777" strokeWidth={2} fillOpacity={1} fill="url(#riskGlow)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -155,7 +162,7 @@ export default function UserDashboardPage() {
                   <XAxis dataKey="date" stroke="#94a3b8" fontSize={10} />
                   <YAxis stroke="#94a3b8" fontSize={10} />
                   <Tooltip />
-                  <Line type="monotone" dataKey="bmi" name="BMI" stroke="#4f46e5" strokeWidth={2} activeDot={{ r: 6 }} />
+                  <Line type="linear" dataKey="bmi" name="BMI" stroke="#4f46e5" strokeWidth={2} activeDot={{ r: 6 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>

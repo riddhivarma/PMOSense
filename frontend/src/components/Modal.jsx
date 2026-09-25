@@ -1,5 +1,6 @@
 // frontend/src/components/Modal.jsx
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 export default function Modal({
@@ -37,11 +38,11 @@ export default function Modal({
     }
   };
 
-  return (
+  const modalContent = (
     <div
       id="modal-backdrop"
       onClick={handleOutsideClick}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900 bg-opacity-50 backdrop-blur-sm animate-fadeIn"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-sm animate-fadeIn"
     >
       <div className={`w-full bg-white rounded-2xl border border-slate-100 shadow-xl overflow-hidden ${sizes[size]} transform transition-transform duration-300 animate-slideUp`}>
         {/* Header */}
@@ -64,4 +65,7 @@ export default function Modal({
       </div>
     </div>
   );
+
+  // Use createPortal to mount modal to document.body, avoiding stacking context issues
+  return createPortal(modalContent, document.body);
 }

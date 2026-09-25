@@ -138,7 +138,7 @@ export default function RecommendationsPage() {
                 <p className="text-xs text-slate-450 mt-0.5">Write details directly to approved fertility experts and gynecologists.</p>
               </div>
               <Link to="/doctor" className="shrink-0 w-full sm:w-auto">
-                <Button variant="secondary" className="w-full text-xs">Consult Doctor</Button>
+                <Button variant="primary" className="w-full text-xs bg-brand-pink-500 hover:bg-brand-pink-600 text-white shadow-md shadow-brand-pink-500/30 border-transparent">Consult Doctor</Button>
               </Link>
             </div>
           </div>

@@ -8,6 +8,7 @@ import Button from '../components/Button';
 import { 
   FileText, ArrowRight, ArrowLeft, RefreshCw, ShieldAlert, Award, Compass, Scale, ClipboardCheck, Droplet, CheckCircle, Activity, Clock, Stethoscope 
 } from 'lucide-react';
+import api from '../services/api';
 
 export default function PredictionResultPage() {
   const [searchParams] = useSearchParams();
@@ -36,20 +37,27 @@ export default function PredictionResultPage() {
 
   const handleDownloadReport = () => {
     Swal.fire({
-      title: 'Generating Report',
-      text: 'Compiling structured PDF screening report...',
+      title: 'Preparing Download',
+      text: 'Starting your PDF download...',
       icon: 'info',
       timer: 1500,
       showConfirmButton: false,
       timerProgressBar: true
-    }).then(() => {
-      Swal.fire({
-        icon: 'success',
-        title: 'Report Downloaded!',
-        text: `PMOSense_Report_${assessment?.id}.pdf has been saved.`,
-        confirmButtonColor: '#4f46e5'
-      });
     });
+
+    const token = localStorage.getItem('pmosense_token') || localStorage.getItem('token');
+    const baseUrl = api.defaults.baseURL || 'http://localhost:5005/api';
+    
+    // Create download URL with token in query string so IDM and browser can auth
+    const downloadUrl = `${baseUrl}/assessment/${assessment.id}/pdf?token=${token}`;
+    
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.target = '_blank';
+    link.setAttribute('download', `PMOSense_Report_${assessment.id}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   if (!assessment) return null;

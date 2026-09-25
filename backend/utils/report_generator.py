@@ -50,6 +50,7 @@ def generate_pdf_report(user_name, user_email, assessment, output_path):
         parent=styles['Normal'],
         fontName='Helvetica-Bold',
         fontSize=24,
+        leading=28,
         textColor=PRIMARY_COLOR,
         alignment=TA_LEFT,
         spaceAfter=5
@@ -103,11 +104,11 @@ def generate_pdf_report(user_name, user_email, assessment, output_path):
     # 4. Header Section
     header_data = [
         [
-            Paragraph("PCOSENSE", title_style), 
+            Paragraph("PMOSense", title_style), 
             Paragraph(f"Date: {assessment['date'].strftime('%d-%b-%Y')}", ParagraphStyle('RightText', parent=body_style, alignment=TA_RIGHT, fontSize=11))
         ],
         [
-            Paragraph("AI-Powered Early PCOS Risk Assessment & Awareness Platform", subtitle_style),
+            Paragraph("AI-Powered Early PMOS Risk Assessment & Awareness Platform", subtitle_style),
             Paragraph("Screening Report", ParagraphStyle('RightSubtext', parent=body_style, alignment=TA_RIGHT, fontName='Helvetica-Bold', textColor=PRIMARY_COLOR))
         ]
     ]
@@ -116,6 +117,7 @@ def generate_pdf_report(user_name, user_email, assessment, output_path):
     header_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
         ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,0), 6),
         ('TOPPADDING', (0,0), (-1,-1), 0),
     ]))
     story.append(header_table)
@@ -212,9 +214,9 @@ def generate_pdf_report(user_name, user_email, assessment, output_path):
     
     risk_banner_content = [
         [
-            Paragraph(f"<b>PCOS RISK LEVEL:</b> {risk_level.upper()}<br/><br/><font size=28>{prob_percentage}%</font><br/><br/>Probability", risk_label_style),
+            Paragraph(f"<b>PMOS RISK LEVEL:</b> {risk_level.upper()}<br/><br/><font size=28>{prob_percentage}%</font><br/><br/>Probability", risk_label_style),
             Paragraph(f"<b>Health Risk Assessment Summary:</b><br/>"
-                      f"The machine learning model predicted a <b>{prob_percentage}%</b> risk of Polycystic Ovary Syndrome (PCOS) based on the inputs provided.<br/><br/>"
+                      f"The machine learning model predicted a <b>{prob_percentage}%</b> risk of Polycystic Morphology Ovary Syndrome (PMOS) based on the inputs provided.<br/><br/>"
                       f"<b>Active Clinical Signs:</b> {symptoms_text}<br/>"
                       f"<b>Lifestyle Habits:</b> Regular Exercise: {'Yes' if inputs.get('reg_exercise') == 1 else 'No'}, High Fast Food Intake: {'Yes' if inputs.get('fast_food') == 1 else 'No'}", risk_desc_style)
         ]
@@ -228,6 +230,47 @@ def generate_pdf_report(user_name, user_email, assessment, output_path):
         ('PADDING', (0,0), (-1,-1), 12),
     ]))
     story.append(risk_table)
+    story.append(Spacer(1, 15))
+    
+    # 6.5 Clinical Feature Weights
+    story.append(Paragraph("Clinical Feature Weights", section_heading))
+    
+    weights_data = []
+    
+    # Menstrual cycle irregularity: 35
+    weights_data.append([
+        Paragraph("<b>Menstrual cycle irregularity</b>", body_style),
+        Paragraph("<font color='#db2777'><b>Present Flagged (+Weight)</b></font>" if inputs.get('cycle') == 1 else "<font color='#9ca3af'>Baseline</font>", body_style)
+    ])
+    # Unexplained weight gain: 20
+    weights_data.append([
+        Paragraph("<b>Unexplained weight gain</b>", body_style),
+        Paragraph("<font color='#db2777'><b>Present Flagged (+Weight)</b></font>" if inputs.get('weight_gain') == 1 else "<font color='#9ca3af'>Baseline</font>", body_style)
+    ])
+    # Facial / body hair growth (Hirsutism): 15
+    weights_data.append([
+        Paragraph("<b>Facial / body hair growth (Hirsutism)</b>", body_style),
+        Paragraph("<font color='#db2777'><b>Present Flagged (+Weight)</b></font>" if inputs.get('hair_growth') == 1 else "<font color='#9ca3af'>Baseline</font>", body_style)
+    ])
+    # Skin darkening patches (Acanthosis): 15
+    weights_data.append([
+        Paragraph("<b>Skin darkening patches (Acanthosis)</b>", body_style),
+        Paragraph("<font color='#db2777'><b>Present Flagged (+Weight)</b></font>" if inputs.get('skin_darkening') == 1 else "<font color='#9ca3af'>Baseline</font>", body_style)
+    ])
+    # Persistent severe acne / pimples: 10
+    weights_data.append([
+        Paragraph("<b>Persistent severe acne / pimples</b>", body_style),
+        Paragraph("<font color='#db2777'><b>Present Flagged (+Weight)</b></font>" if inputs.get('pimples') == 1 else "<font color='#9ca3af'>Baseline</font>", body_style)
+    ])
+    
+    weights_table = Table(weights_data, colWidths=[340, 200])
+    weights_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('LINEBELOW', (0,0), (-1,-1), 0.5, BORDER_COLOR),
+        ('TOPPADDING', (0,0), (-1,-1), 6),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+    ]))
+    story.append(weights_table)
     story.append(Spacer(1, 15))
     
     # 7. Personalized Health Guidelines
@@ -259,13 +302,13 @@ def generate_pdf_report(user_name, user_email, assessment, output_path):
         ('BACKGROUND', (0,0), (0,-1), colors.HexColor('#faf5ff')), # Soft light purple/lavender left column
     ]))
     
-    # We keep recommendations block together to avoid page break mid-table
-    story.append(KeepTogether(rec_table))
+    # We allow the table to split naturally across pages
+    story.append(rec_table)
     story.append(Spacer(1, 20))
     
     # 8. Disclaimer Footer (Must be kept at the bottom of the page)
     disclaimer_text = (
-        "<b>MEDICAL DISCLAIMER:</b> PCOSENSE is an artificial intelligence powered early screening tool "
+        "<b>MEDICAL DISCLAIMER:</b> PMOSense is an artificial intelligence powered early screening tool "
         "designed for educational and awareness purposes only. This screening result is NOT a medical diagnosis, "
         "nor does it constitute therapeutic advice. Machine Learning outputs can contain statistical errors. "
         "Always consult a licensed gynecologist, endocrinologist, or qualified healthcare professional "

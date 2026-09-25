@@ -3,6 +3,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import MainLayout from '../layouts/MainLayout';
+import PreviewLayout from '../layouts/PreviewLayout';
 
 // Public Pages
 import LandingPage from '../pages/LandingPage';
@@ -23,12 +24,16 @@ import PredictionResultPage from '../pages/PredictionResultPage';
 import RecommendationsPage from '../pages/RecommendationsPage';
 import HistoryPage from '../pages/HistoryPage';
 import DoctorConsultationPage from '../pages/DoctorConsultationPage';
+import CycleTrackerPage from '../pages/CycleTrackerPage';
 import EducationResourcesPage from '../pages/EducationResourcesPage';
 import UnderConstructionPage from '../pages/UnderConstructionPage';
 
 // Doctor & Admin Pages
 import DoctorDashboardPage from '../pages/DoctorDashboardPage';
+import DoctorReportsPage from '../pages/DoctorReportsPage';
 import AdminDashboardPage from '../pages/AdminDashboardPage';
+import AdminReportsPage from '../pages/AdminReportsPage';
+import AdminEducationHubPage from '../pages/AdminEducationHubPage';
 
 // Auth Guard: Requires Login
 function AuthGuard({ children }) {
@@ -113,6 +118,14 @@ export default function AppRoutes() {
           </RoleGuard>
         </AuthGuard>
       } />
+
+      <Route path="/cycle-tracker" element={
+        <AuthGuard>
+          <RoleGuard allowedRoles={['user']}>
+            <MainLayout><CycleTrackerPage /></MainLayout>
+          </RoleGuard>
+        </AuthGuard>
+      } />
       
       {/* User view doctor consultation page */}
       <Route path="/doctor" element={
@@ -125,6 +138,7 @@ export default function AppRoutes() {
 
       {/* Shared Protected Pages */}
       <Route path="/education" element={<MainLayout><EducationResourcesPage /></MainLayout>} />
+      <Route path="/education-preview" element={<PreviewLayout><EducationResourcesPage /></PreviewLayout>} />
 
       {/* Doctor Dashboards */}
       <Route path="/doctor-dashboard" element={
@@ -134,12 +148,33 @@ export default function AppRoutes() {
           </RoleGuard>
         </AuthGuard>
       } />
+      <Route path="/doctor-reports" element={
+        <AuthGuard>
+          <RoleGuard allowedRoles={['doctor']}>
+            <MainLayout><DoctorReportsPage /></MainLayout>
+          </RoleGuard>
+        </AuthGuard>
+      } />
 
       {/* Admin Dashboards */}
       <Route path="/admin-dashboard" element={
         <AuthGuard>
           <RoleGuard allowedRoles={['admin']}>
             <MainLayout><AdminDashboardPage /></MainLayout>
+          </RoleGuard>
+        </AuthGuard>
+      } />
+      <Route path="/admin-education" element={
+        <AuthGuard>
+          <RoleGuard allowedRoles={['admin']}>
+            <MainLayout><AdminEducationHubPage /></MainLayout>
+          </RoleGuard>
+        </AuthGuard>
+      } />
+      <Route path="/admin-reports" element={
+        <AuthGuard>
+          <RoleGuard allowedRoles={['admin']}>
+            <MainLayout><AdminReportsPage /></MainLayout>
           </RoleGuard>
         </AuthGuard>
       } />
